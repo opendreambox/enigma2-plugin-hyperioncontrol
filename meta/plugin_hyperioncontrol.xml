@@ -1,0 +1,15 @@
+<default>
+	<prerequisites>
+		<tag type="Multimedia" />
+	</prerequisites>
+	<info>
+		<author>Dream Property GmbH</author>
+		<name>HyperionControl</name>
+		<packagename>enigma2-plugin-extensions-hyperioncontrol</packagename>
+		<shortdescription>Control Hyperion based Ambient Lightning</shortdescription>
+		<description>A plugin to control the hyperion ambient lightning software</description>
+	</info>
+	<files type="package"> <!-- without version, without .deb  -->
+		<file type="package" name="enigma2-plugin-extensions-hyperioncontrol" />
+	</files>
+</default>
