@@ -23,7 +23,7 @@ import subprocess, threading, os, json
 sz_w = getDesktop(0).size().width()
 
 hyperionremote_sh = "systemctl"
-hyperioncontrol_version = "2.5 beta 8"
+hyperioncontrol_version = "2.6"
 
 json.encoder.FLOAT_REPR = lambda o: format(o, '.4f')
 
@@ -508,7 +508,7 @@ class hyperionControlSetup(Screen, ConfigListScreen):
 			# device
 			self.jsonConfig['device']['type'] = str(config.plugins.hyperioncontrol.deviceType.value)
 			self.jsonConfig['device']['name'] = str(config.plugins.hyperioncontrol.configName.value)
-			if config.plugins.hyperioncontrol.deviceType.value in ("sedu","adalight","atmo","karatelight"):
+			if config.plugins.hyperioncontrol.deviceType.value in ("sedu","adalight","AdalightApa102","atmo","karate"):
 				self.jsonConfig['device']['output'] = str(config.plugins.hyperioncontrol.outputTYPE.value)
 				self.jsonConfig['device']['delayafterconnect'] = int(config.plugins.hyperioncontrol.delayafterconnect.value)
 			else:
@@ -516,13 +516,21 @@ class hyperionControlSetup(Screen, ConfigListScreen):
 					self.jsonConfig['device']['output'] = ".".join(["%d" % d for d in config.plugins.hyperioncontrol.outputIP.value])
 				elif config.plugins.hyperioncontrol.deviceType.value == "udpraw":
 					self.jsonConfig['device']['output'] = ".".join(["%d" % d for d in config.plugins.hyperioncontrol.outputIP.value]) + ":19446"
+			if config.plugins.hyperioncontrol.deviceType.value == "philipshue":
+				self.jsonConfig['device']['username'] = str(config.plugins.hyperioncontrol.phe_username.value)
+				self.jsonConfig['device']['lightIds'] = [int(s) for s in config.plugins.hyperioncontrol.phe_lightIds.value.split(',')]
+				self.jsonConfig['device']['switchOffOnBlack'] = str(config.plugins.hyperioncontrol.phe_switchOffOnBlack.value)
 			if config.plugins.hyperioncontrol.deviceType.value == "philipshueentertainment":
 				self.jsonConfig['device']['username'] = str(config.plugins.hyperioncontrol.phe_username.value)
 				self.jsonConfig['device']['clientkey'] = str(config.plugins.hyperioncontrol.phe_clientkey.value)
 				self.jsonConfig['device']['lightIds'] = [int(s) for s in config.plugins.hyperioncontrol.phe_lightIds.value.split(',')]
 				self.jsonConfig['device']['groupId'] = int(config.plugins.hyperioncontrol.phe_groupId.value)
-			self.jsonConfig['device']['colorOrder'] = str(config.plugins.hyperioncontrol.colorOrder.value)
-			self.jsonConfig['device']['rate'] = int(config.plugins.hyperioncontrol.baudrate.value)
+				self.jsonConfig['device']['switchOffOnBlack'] = str(config.plugins.hyperioncontrol.phe_switchOffOnBlack.value)
+			if config.plugins.hyperioncontrol.deviceType.value == "philipshueentertainment":
+				self.jsonConfig['device']['colorOrder'] = str(config.plugins.hyperioncontrol.colorOrder.value)
+			else:
+				self.jsonConfig['device']['colorOrder'] = str(config.plugins.hyperioncontrol.colorOrder.value)
+				self.jsonConfig['device']['rate'] = int(config.plugins.hyperioncontrol.baudrate.value)
 			
 			#LED-Config
 			if config.plugins.hyperioncontrol.ledBegin.value != "0":
@@ -562,7 +570,7 @@ class hyperionControlSetup(Screen, ConfigListScreen):
 
 	def saveJsonMessageCallback(self, ret=None):
 		#check installed packages for device-type
-		if config.plugins.hyperioncontrol.deviceType.value in ("sedu","adalight","atmo","karatelight"):
+		if config.plugins.hyperioncontrol.deviceType.value in ("sedu","adalight","AdalightApa102","atmo","karate"):
 			command = Command("apt list --installed kernel-module-usbserial kernel-module-ch341 kernel-module-ftdi-sio")
 			command.run(timeout=5)
 		
@@ -992,19 +1000,25 @@ class hyperionControlSetup(Screen, ConfigListScreen):
 					outputIP = [int(d) for d in outputIP]
 					config.plugins.hyperioncontrol.outputIP.value = outputIP
 				setConfigValueFromJson(config.plugins.hyperioncontrol.colorOrder, self.jsonConfigBak, ['device','colorOrder'])
+				if config.plugins.hyperioncontrol.deviceType.value == "philipshue":
+					setConfigValueFromJson(config.plugins.hyperioncontrol.phe_username, self.jsonConfigBak, ['device','username'])
+					lightIDs = setConfigValueFromJson(config.plugins.hyperioncontrol.phe_lightIds, self.jsonConfigBak, ['device','lightIds'], onlyReturnValue=True)
 				if config.plugins.hyperioncontrol.deviceType.value == "philipshueentertainment":
 					setConfigValueFromJson(config.plugins.hyperioncontrol.phe_username, self.jsonConfigBak, ['device','username'])
 					setConfigValueFromJson(config.plugins.hyperioncontrol.phe_clientkey, self.jsonConfigBak, ['device','clientkey'])
 					lightIDs = setConfigValueFromJson(config.plugins.hyperioncontrol.phe_lightIds, self.jsonConfigBak, ['device','lightIds'], onlyReturnValue=True)
 					config.plugins.hyperioncontrol.phe_lightIds.value = ', '.join(map(str, lightIDs))
 					setConfigValueFromJson(config.plugins.hyperioncontrol.phe_groupId, self.jsonConfigBak, ['device','groupId'])
-				setConfigValueFromJson(config.plugins.hyperioncontrol.delayafterconnect, self.jsonConfigBak, ['device','delayafterconnect'])
-				setConfigValueFromJson(config.plugins.hyperioncontrol.baudrate, self.jsonConfigBak, ['device','rate'],calculate=1)
-				
+					setConfigValueFromJson(config.plugins.hyperioncontrol.delayafterconnect, self.jsonConfigBak, ['device','delayafterconnect'])
+				if config.plugins.hyperioncontrol.deviceType.value in ("philipshue","philipshueentertainment"):
+					self.jsonConfig['device']['switchOffOnBlack'] = str(config.plugins.hyperioncontrol.phe_switchOffOnBlack.value)
+				else:
+					setConfigValueFromJson(config.plugins.hyperioncontrol.baudrate, self.jsonConfigBak, ['device','rate'],calculate=1)
+
 				#outputType
-				if config.plugins.hyperioncontrol.deviceType.value in ("sedu","adalight","atmo","karatelight"):
+				if config.plugins.hyperioncontrol.deviceType.value in ("sedu","adalight","AdalightApa102","atmo","karate"):
 					setConfigValueFromJson(config.plugins.hyperioncontrol.outputTYPE, self.jsonConfigBak, ['device','output'])
-				
+
 				#Framegrabber
 				width = setConfigValueFromJson(None, self.jsonConfigBak, ['framegrabber','width'],None,True,"160")
 				height = setConfigValueFromJson(None, self.jsonConfigBak, ['framegrabber','height'],None,True,"160")
@@ -1245,16 +1259,24 @@ class hyperionControlSetup(Screen, ConfigListScreen):
 				self.list.append(getConfigListEntry(_("Device-IP (fix port: 19446)"), config.plugins.hyperioncontrol.outputIP))
 			elif config.plugins.hyperioncontrol.deviceType.value in ("philipshue","philipshueentertainment"):
 				self.list.append(getConfigListEntry(_("Device-IP"), config.plugins.hyperioncontrol.outputIP))
-			if config.plugins.hyperioncontrol.deviceType.value in ("sedu","adalight","atmo","karatelight"):
+			if config.plugins.hyperioncontrol.deviceType.value in ("sedu","adalight","AdalightApa102","atmo","karate"):
 				self.list.append(getConfigListEntry(_("Output"), config.plugins.hyperioncontrol.outputTYPE))
 				self.list.append(getConfigListEntry(_("delayafterconnect (0-20, default=0)"), config.plugins.hyperioncontrol.delayafterconnect))
+			if config.plugins.hyperioncontrol.deviceType.value == "philipshue":
+				self.list.append(getConfigListEntry(_("UserName"), config.plugins.hyperioncontrol.phe_username))
+				self.list.append(getConfigListEntry(_("LightIDs"), config.plugins.hyperioncontrol.phe_lightIds))
+				self.list.append(getConfigListEntry(_("Switch Off On Black"), config.plugins.hyperioncontrol.phe_switchOffOnBlack))
 			if config.plugins.hyperioncontrol.deviceType.value == "philipshueentertainment":
 				self.list.append(getConfigListEntry(_("UserName"), config.plugins.hyperioncontrol.phe_username))
 				self.list.append(getConfigListEntry(_("ClientKey"), config.plugins.hyperioncontrol.phe_clientkey))
 				self.list.append(getConfigListEntry(_("LightIDs"), config.plugins.hyperioncontrol.phe_lightIds))
 				self.list.append(getConfigListEntry(_("GroupID"), config.plugins.hyperioncontrol.phe_groupId))
-			self.list.append(getConfigListEntry(_("colorOrder"), config.plugins.hyperioncontrol.colorOrder))
-			self.list.append(getConfigListEntry(_("Baudrate"), config.plugins.hyperioncontrol.baudrate))
+				self.list.append(getConfigListEntry(_("Switch Off On Black"), config.plugins.hyperioncontrol.phe_switchOffOnBlack))
+			if config.plugins.hyperioncontrol.deviceType.value in ("philipshue","philipshueentertainment"):
+				self.list.append(getConfigListEntry(_("colorOrder"), config.plugins.hyperioncontrol.colorOrder))
+			else:
+				self.list.append(getConfigListEntry(_("colorOrder"), config.plugins.hyperioncontrol.colorOrder))
+				self.list.append(getConfigListEntry(_("Baudrate"), config.plugins.hyperioncontrol.baudrate))
 			
 			self.list.append(getConfigListEntry("", ))
 			self.list.append(getConfigListEntry(_("LED-Setup"), ))
@@ -1324,9 +1346,11 @@ class hyperionControlSetup(Screen, ConfigListScreen):
 			#set to default baudrate for devices
 			if configName == "deviceType" and current[1].value == "sedu":
 				config.plugins.hyperioncontrol.baudrate.value = "500000"
-			elif configName == "deviceType" and current[1].value == "karatelight":
+			elif configName == "deviceType" and current[1].value == "karate":
 				config.plugins.hyperioncontrol.baudrate.value = "57600"
 			elif configName == "deviceType" and current[1].value == "adalight":
+				config.plugins.hyperioncontrol.baudrate.value = "115200"
+			elif configName == "deviceType" and current[1].value == "AdalightApa102":
 				config.plugins.hyperioncontrol.baudrate.value = "115200"
 			elif configName == "deviceType" and current[1].value == "atmo":
 				config.plugins.hyperioncontrol.baudrate.value = "38400"
@@ -1526,9 +1550,25 @@ class hyperionControlSetup(Screen, ConfigListScreen):
 		elif configName.startswith("bootseq"):
 			message_txt = _("Bootsequence\n\nWith this options you can setup the bootsequence. Youn can set a color or an effect on boot hyperion (with 'off' you can deactivate this function). You can also set the duration of the bootsequence (0 ms = endless).\nOn 'off' hyperion start directly in live mode.")
 		elif configName == "deviceType":
-			message_txt = _("Device-Type\n\nHere you can select the used device type.\n\nIf you use a device via USB (Adalight, Sedulight, Karatelight, Atmolight), you need additional kernel modules:\napt-get install kernel-module-ch341\napt-get install kernel-module-usbserial")
+			message_txt = _("Device-Type\n\nHere you can select the used device type.\n\nIf you use a device via USB (Adalight, Adalight-APA102, Sedulight, Karatelight, Atmolight), you need additional kernel modules:\napt-get install kernel-module-ch341\napt-get install kernel-module-usbserial")
+		elif configName == "configName":
+			message_txt = _("Can be chosen freely.")
+		elif configName == "outputIP":
+			message_txt = _("IP Adress of Wemos ESP or HueBridge.")
+		elif configName == "phe_username":
+			message_txt = _("Generating your username. Visit developers.meethue.com and follow the Getting Started Guide step bystep.\nOnce you establish your connection with the bridge, you will have a 32 characters uniqueusername.")
+		elif configName == "phe_clientkey":
+			message_txt = _("Open web interface for developers (API debugging) on the bridge: http: // <IP of the bridge> /debug/clip.html.\nCreate a new user here. Devicetype: myapplication hyperionHue, generateclientkey: true \nThe answer is the trust name and the client key.")
+		elif configName == "phe_lightIds":
+			message_txt = _("In PhilipsHue App you can see your Lights.\nMake a note of ordering of the Lights next to the lamp icons in Lights section.\nThis is your LightsIDs.")
+		elif configName == "phe_groupId":
+			message_txt = _("Identify entertainment area. \n / api / <user name from step 1> / groups / <number of entertainment area>")
+		elif configName == "phe_switchOffOnBlack":
+			message_txt = _("Not all colrs can be displayed by the Philips Hue devices and black will result in abluish, dark color.\nTherefore, you can let Hyperion switch off your lights when the light should be black:")
 		elif configName == "baudrate":
-			message_txt = _("Baudrate\n\nThe baudrate is preset with a default value for each device type. In rare cases, however, this value can deviate. If no result is visible, the baud rate must be selected differently.\n\nIf no default baudrate is required, this can be freely selected.\nThe baudrate then depends on the set videograbber frequency (FPS) and the number of LEDs used. An LED requires 24 bits. If, for example, we have installed 100 LEDs, you need 24 * 100 bits per second, which is then multiplied by the set frequency.\n\nWith 10 FPS this would be 24 * 100 * 10 = 24,000 bits.\nA baud rate of 24,000 would thus be sufficient to control all LEDs.")
+			message_txt = _("Baudrate\n\nThe baudrate is preset with a default value for each device type. In rare cases, however, this value can deviate. If no result is visible, the baud rate must be selected differently.\n\nIf no default baudrate is required, this can be freely selected.\nThe baudrate then depends on the set videograbber frequency (FPS) and the number of LEDs used. An LED requires 24 bits + 8 bits for Control. If, for example, we have installed 100 LEDs, you need 32 * 100 bits per second, which is then multiplied by the set frequency.\n\nWith 10 FPS this would be 32 * 100 * 10 = 32,000 bits.\nA baud rate of 32,000 would thus be sufficient to control all LEDs.")
+		elif configName == "colorOrder":
+			message_txt = _("If the colors are not displayed correctly. Red e.g. Is blue, you can change the color order here.")
 		elif configName == "outputTYPE":
 			message_txt = _("Output\n\nDepending on the device type used, the appropriate output must be selected.\n\nIf you are not sure, check the description of your device.\n\nIf you don't find any information then you have to find out by trying.")
 		elif configName == "smoothingupdateFrequency":
