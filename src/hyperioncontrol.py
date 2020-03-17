@@ -23,7 +23,7 @@ import subprocess, threading, os, json
 sz_w = getDesktop(0).size().width()
 
 hyperionremote_sh = "systemctl"
-hyperioncontrol_version = "2.6"
+hyperioncontrol_version = "2.61"
 
 json.encoder.FLOAT_REPR = lambda o: format(o, '.4f')
 
@@ -516,6 +516,7 @@ class hyperionControlSetup(Screen, ConfigListScreen):
 					self.jsonConfig['device']['output'] = ".".join(["%d" % d for d in config.plugins.hyperioncontrol.outputIP.value])
 				elif config.plugins.hyperioncontrol.deviceType.value == "udpraw":
 					self.jsonConfig['device']['output'] = ".".join(["%d" % d for d in config.plugins.hyperioncontrol.outputIP.value]) + ":19446"
+					self.jsonConfig['device']['protocol'] = int(config.plugins.hyperioncontrol.protocol.value)
 			if config.plugins.hyperioncontrol.deviceType.value == "philipshue":
 				self.jsonConfig['device']['username'] = str(config.plugins.hyperioncontrol.phe_username.value)
 				self.jsonConfig['device']['lightIds'] = [int(s) for s in config.plugins.hyperioncontrol.phe_lightIds.value.split(',')]
@@ -1014,6 +1015,8 @@ class hyperionControlSetup(Screen, ConfigListScreen):
 					self.jsonConfig['device']['switchOffOnBlack'] = str(config.plugins.hyperioncontrol.phe_switchOffOnBlack.value)
 				else:
 					setConfigValueFromJson(config.plugins.hyperioncontrol.baudrate, self.jsonConfigBak, ['device','rate'],calculate=1)
+				if config.plugins.hyperioncontrol.deviceType.value in ("udpraw"):
+					setConfigValueFromJson(config.plugins.hyperioncontrol.protocol, self.jsonConfigBak, ['device','protocol'])
 
 				#outputType
 				if config.plugins.hyperioncontrol.deviceType.value in ("sedu","adalight","AdalightApa102","atmo","karate"):
@@ -1277,6 +1280,8 @@ class hyperionControlSetup(Screen, ConfigListScreen):
 			else:
 				self.list.append(getConfigListEntry(_("colorOrder"), config.plugins.hyperioncontrol.colorOrder))
 				self.list.append(getConfigListEntry(_("Baudrate"), config.plugins.hyperioncontrol.baudrate))
+			if config.plugins.hyperioncontrol.deviceType.value in ("udpraw"):
+				self.list.append(getConfigListEntry(_("Protocol"), config.plugins.hyperioncontrol.protocol))
 			
 			self.list.append(getConfigListEntry("", ))
 			self.list.append(getConfigListEntry(_("LED-Setup"), ))
@@ -1567,6 +1572,8 @@ class hyperionControlSetup(Screen, ConfigListScreen):
 			message_txt = _("Not all colrs can be displayed by the Philips Hue devices and black will result in abluish, dark color.\nTherefore, you can let Hyperion switch off your lights when the light should be black:")
 		elif configName == "baudrate":
 			message_txt = _("Baudrate\n\nThe baudrate is preset with a default value for each device type. In rare cases, however, this value can deviate. If no result is visible, the baud rate must be selected differently.\n\nIf no default baudrate is required, this can be freely selected.\nThe baudrate then depends on the set videograbber frequency (FPS) and the number of LEDs used. An LED requires 24 bits + 8 bits for Control. If, for example, we have installed 100 LEDs, you need 32 * 100 bits per second, which is then multiplied by the set frequency.\n\nWith 10 FPS this would be 32 * 100 * 10 = 32,000 bits.\nA baud rate of 32,000 would thus be sufficient to control all LEDs.")
+		elif configName == "protocol":
+			message_txt = _("Protocol\n\nProtocol 0 simply sends raw led data in RGBRGB in binary. UDP listener is compatible with Protocol 0\n\nIf you are using an ESP8266/Arduino device with a long LED strip, you chould use this alternate protocol 2.\n\nProtocol 3 is a simple TPM2.net implementation. More information on TPM2.net")
 		elif configName == "colorOrder":
 			message_txt = _("If the colors are not displayed correctly. Red e.g. Is blue, you can change the color order here.")
 		elif configName == "outputTYPE":

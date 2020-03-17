@@ -67,6 +67,7 @@ config.plugins.hyperioncontrol.outputTYPE = ConfigSelection(choices=[("/dev/ttyU
 config.plugins.hyperioncontrol.delayafterconnect = ConfigSelectionNumber(0,20,1,default = 0)
 config.plugins.hyperioncontrol.colorOrder = ConfigSelection(choices=[("rgb","RGB"), ("bgr","BGR"), ("rbg","RBG"), ("brg","BRG"), ("grb","GRB"), ("gbr","GBR")], default = "rgb")
 config.plugins.hyperioncontrol.baudrate = ConfigSelection(choices=[("38400","38.400"), ("50000","50.000"), ("57600","57.600"), ("100000","100.000"),("115200","115.200"), ("150000","150.000"), ("200000","200.000"), ("250000","250.000"), ("460800","460.800"), ("500000","500.000"), ("800000","800.000"), ("1000000","1.000.000")], default = "200000")
+config.plugins.hyperioncontrol.protocol = ConfigSelection(choices=[("0","0"), ("2","2"), ("3","3")], default = "0")
 config.plugins.hyperioncontrol.lastpicpath = ConfigText("/", False)
 config.plugins.hyperioncontrol.ledDirection = ConfigSelection(choices=[("1",_("clockwise")), ("2",_("counterclockwise"))], default = "1")
 config.plugins.hyperioncontrol.ledBegin = ConfigSelection(choices=[("0",_("none")),("1",_("bottom middle")), ("2",_("right bottom")), ("3",_("right top")), ("4",_("left top")), ("5",_("left bottom"))], default = "0")
