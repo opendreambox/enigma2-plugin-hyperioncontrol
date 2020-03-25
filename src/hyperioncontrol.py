@@ -23,7 +23,7 @@ import subprocess, threading, os, json
 sz_w = getDesktop(0).size().width()
 
 hyperionremote_sh = "systemctl"
-hyperioncontrol_version = "2.61"
+hyperioncontrol_version = "2.62"
 
 json.encoder.FLOAT_REPR = lambda o: format(o, '.4f')
 
